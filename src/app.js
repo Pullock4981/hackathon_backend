@@ -1,0 +1,34 @@
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+const errorHandler = require('./middleware/errorMiddleware');
+const notFound = require('./middleware/notFoundMiddleware');
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Health check endpoint
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({ status: 'success', message: 'API is running smoothly' });
+});
+
+// 404 Route Handler
+app.use(notFound);
+
+// Centralized Error Handler
+app.use(errorHandler);
+
+module.exports = app;
