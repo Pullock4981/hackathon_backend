@@ -356,5 +356,26 @@ This phase introduces automated CRON jobs and AI integrations (Resume Scorer & R
   }
   ```
 
+## Phase 7: AI Email Automation (Completed)
+This phase introduces an automated notification system that sends personalized AI-generated emails to students in the "Red Zone" (High Risk) and their mentors.
+
+### Features:
+- **Nodemailer Setup:** Integration for sending emails via SMTP (e.g., Gmail App Password).
+- **OpenAI Integration:** Dynamically generates professional, motivational warning emails for students.
+- **Automated Workflow:** The CRON job (which runs daily) automatically finds High Risk students and triggers this email.
+
+---
+## Environment Variables Setup
+To run this project locally, you need to create a `.env` file in the root directory and copy the contents from `.env.example`.
+
+1. Copy the example file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Open `.env` and fill in your actual credentials:
+   - `MONGODB_URI`: Your MongoDB connection string.
+   - `SMTP_USER` & `SMTP_PASS`: Your Gmail address and 16-digit App Password.
+   - `OPENAI_API_KEY`: Your OpenAI API Key for dynamic email generation.
+
 ---
 *This concludes all planned phases for the Hackathon Backend!*
