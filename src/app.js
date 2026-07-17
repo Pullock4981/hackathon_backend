@@ -5,10 +5,10 @@ const morgan = require('morgan');
 const errorHandler = require('./middleware/errorMiddleware');
 const notFound = require('./middleware/notFoundMiddleware');
 
-// Route files
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const { directRouter: studentDirectRoutes } = require('./routes/studentRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 
 const app = express();
 
@@ -39,6 +39,7 @@ app.get('/api/v1/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/students', studentDirectRoutes);
+app.use('/api/v1/dashboard', statsRoutes);
 
 // 404 Route Handler
 app.use(notFound);

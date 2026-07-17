@@ -249,5 +249,56 @@ This phase includes creating quizzes and an auto-marking exam engine.
   }
   ```
 
+## Phase 5: Aggregation, Tiers & Leaderboards (Completed)
+This phase implements the core calculation logic for student tiers (A, B, C), generates project leaderboards, and provides dashboard statistics.
+
+### Features:
+- Auto-calculate student tiers based on attendance, mock score, and profile readiness.
+- Project Leaderboard sorted by total marks.
+- Global dashboard statistics (total students, active, hired, placement rate) for mentors.
+
+### API Endpoints
+
+#### 1. Calculate Tiers
+- **Route:** `POST /api/v1/projects/:projectId/calculate-tiers`
+- **Access:** Private
+- **Description:** Scans all students in a project and updates their tier.
+
+#### 2. Get Leaderboard
+- **Route:** `GET /api/v1/projects/:projectId/leaderboard`
+- **Access:** Private
+- **Response Example:**
+  ```json
+  {
+    "success": true,
+    "count": 10,
+    "data": [
+      {
+        "_id": "60b9b...",
+        "name": "Jane Doe",
+        "tier": "Tier A",
+        "totalMark": 150
+      }
+    ]
+  }
+  ```
+
+#### 3. Dashboard Statistics
+- **Route:** `GET /api/v1/dashboard`
+- **Access:** Private
+- **Response Example:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "totalProjects": 2,
+      "totalStudents": 50,
+      "totalHired": 5,
+      "totalActive": 40,
+      "placementRate": "10.00%"
+    }
+  }
+  ```
+
 ---
 *Note: This README will be updated as new phases are completed.*

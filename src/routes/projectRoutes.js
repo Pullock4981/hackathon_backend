@@ -4,6 +4,7 @@ const {
   getProjects,
   getProject
 } = require('../controllers/projectController');
+const { calculateTiers, getLeaderboard } = require('../controllers/statsController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Include other resource routers
@@ -26,5 +27,8 @@ router.route('/')
 
 router.route('/:id')
   .get(protect, getProject);
+
+router.post('/:projectId/calculate-tiers', protect, calculateTiers);
+router.get('/:projectId/leaderboard', protect, getLeaderboard);
 
 module.exports = router;
