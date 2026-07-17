@@ -300,5 +300,61 @@ This phase implements the core calculation logic for student tiers (A, B, C), ge
   }
   ```
 
+## Phase 6: Automation & Advanced Features (Completed)
+This phase introduces automated CRON jobs and AI integrations (Resume Scorer & Risk Predictor).
+
+### Features:
+- **CRON Job:** Runs daily at midnight to update attendance streaks and check missing submissions.
+- **AI Integration:** Mock APIs representing external AI connections for resume evaluation and risk prediction.
+
+### API Endpoints
+
+#### 1. AI Resume Scorer (Mock)
+- **Route:** `POST /api/v1/ai/resume-score`
+- **Access:** Private
+- **Request Body Example:**
+  ```json
+  {
+    "resumeUrl": "https://example.com/resume.pdf"
+  }
+  ```
+- **Response Example:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "score": 85,
+      "feedback": "The resume looks good but could use more details on recent projects.",
+      "improvements": [
+        "Add quantitative metrics",
+        "Highlight leadership roles"
+      ]
+    }
+  }
+  ```
+
+#### 2. AI Risk Predictor (Mock)
+- **Route:** `POST /api/v1/ai/predict-risk`
+- **Access:** Private
+- **Request Body Example:**
+  ```json
+  {
+    "studentStats": {
+      "attendancePercentage": 45,
+      "totalMark": 30
+    }
+  }
+  ```
+- **Response Example:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "riskLevel": "High",
+      "reason": "Low attendance trend detected."
+    }
+  }
+  ```
+
 ---
-*Note: This README will be updated as new phases are completed.*
+*This concludes all planned phases for the Hackathon Backend!*

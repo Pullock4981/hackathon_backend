@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const { directRouter: studentDirectRoutes } = require('./routes/studentRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/students', studentDirectRoutes);
 app.use('/api/v1/dashboard', statsRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // 404 Route Handler
 app.use(notFound);
