@@ -10,6 +10,7 @@ const { protect } = require('../middleware/authMiddleware');
 const studentRouter = require('./studentRoutes');
 const attendanceRouter = require('./attendanceRoutes');
 const taskRouter = require('./taskRoutes');
+const quizRouter = require('./quizRoutes');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ const router = express.Router();
 router.use('/:projectId/students', studentRouter);
 router.use('/:projectId/attendance', attendanceRouter);
 router.use('/:projectId/tasks', taskRouter);
+router.use('/:projectId/quizzes', quizRouter);
 
 router.route('/')
   .get(protect, getProjects)

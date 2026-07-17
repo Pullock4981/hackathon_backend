@@ -199,5 +199,55 @@ This phase tracks daily attendance and tasks for the students. The submission up
 - **Route:** `GET /api/v1/projects/:projectId/tasks?date=2023-01-01`
 - **Access:** Private
 
+## Phase 4: Assessment (Quiz Engine) (Completed)
+This phase includes creating quizzes and an auto-marking exam engine.
+
+### Features:
+- Create Quiz with questions, options, and marks.
+- Submit Quiz for auto-grading.
+- Auto-calculate score based on correct answers.
+
+### API Endpoints
+
+#### 1. Create Quiz
+- **Route:** `POST /api/v1/projects/:projectId/quizzes`
+- **Access:** Private
+- **Request Body Example:**
+  ```json
+  {
+    "title": "React Basics",
+    "status": "Live",
+    "durationMinutes": 15,
+    "questions": [
+      {
+        "questionText": "What is React?",
+        "options": ["Library", "Framework", "Language"],
+        "correctAnswer": "Library",
+        "marks": 5
+      }
+    ]
+  }
+  ```
+
+#### 2. Get All Quizzes
+- **Route:** `GET /api/v1/projects/:projectId/quizzes`
+- **Access:** Private
+
+#### 3. Submit Quiz (Auto-Marking)
+- **Route:** `POST /api/v1/projects/:projectId/quizzes/:id/submit`
+- **Access:** Private
+- **Request Body Example:**
+  ```json
+  {
+    "studentId": "60b9b...",
+    "answers": [
+      {
+        "questionId": "60b9b...",
+        "providedAnswer": "Library"
+      }
+    ]
+  }
+  ```
+
 ---
 *Note: This README will be updated as new phases are completed.*
