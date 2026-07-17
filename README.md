@@ -156,5 +156,48 @@ In this phase, we implemented the core entities: Projects and Students. Mentors 
   }
   ```
 
+## Phase 3: Daily Operations (Completed)
+This phase tracks daily attendance and tasks for the students. The submission updates the student's dynamic marks and streaks.
+
+### Features:
+- Attendance submission (Present, Absent, Leave) with dynamic global points.
+- Task submission (Complete, Incomplete) with dynamic global points.
+- Auto-updating student's total attendance, marks, and streaks on submission.
+
+### API Endpoints
+
+#### 1. Submit Attendance
+- **Route:** `POST /api/v1/projects/:projectId/attendance`
+- **Access:** Private
+- **Request Body Example:**
+  ```json
+  {
+    "studentId": "60b9b...",
+    "date": "2023-01-01",
+    "status": "Present"
+  }
+  ```
+
+#### 2. Get Project Attendance
+- **Route:** `GET /api/v1/projects/:projectId/attendance?date=2023-01-01`
+- **Access:** Private
+
+#### 3. Submit Task
+- **Route:** `POST /api/v1/projects/:projectId/tasks`
+- **Access:** Private
+- **Request Body Example:**
+  ```json
+  {
+    "studentId": "60b9b...",
+    "date": "2023-01-01",
+    "title": "React Component Design",
+    "status": "Complete"
+  }
+  ```
+
+#### 4. Get Project Tasks
+- **Route:** `GET /api/v1/projects/:projectId/tasks?date=2023-01-01`
+- **Access:** Private
+
 ---
 *Note: This README will be updated as new phases are completed.*
