@@ -2,7 +2,9 @@ const express = require('express');
 const {
   createProject,
   getProjects,
-  getProject
+  getProject,
+  createFormConfig,
+  updateFormConfig
 } = require('../controllers/projectController');
 const { calculateTiers, getLeaderboard } = require('../controllers/statsController');
 const { protect } = require('../middleware/authMiddleware');
@@ -32,5 +34,9 @@ router.route('/:id')
 
 router.post('/:projectId/calculate-tiers', protect, calculateTiers);
 router.get('/:projectId/leaderboard', protect, getLeaderboard);
+
+router.route('/:projectId/forms')
+  .post(protect, createFormConfig)
+  .put(protect, updateFormConfig);
 
 module.exports = router;

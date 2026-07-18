@@ -26,6 +26,10 @@ const projectSchema = new mongoose.Schema(
     totalInactive: { type: Number, default: 0 },
     totalActive: { type: Number, default: 0 },
     totalRisk: { type: Number, default: 0 },
+    customFormConfig: {
+      type: Object,
+      default: null,
+    },
   },
   {
     timestamps: true,

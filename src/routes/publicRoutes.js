@@ -7,6 +7,10 @@ const {
   getPublicQuiz,
   submitPublicQuiz
 } = require('../controllers/quizController');
+const {
+  getPublicForm,
+  submitPublicForm
+} = require('../controllers/projectController');
 
 const router = express.Router();
 
@@ -15,5 +19,8 @@ router.post('/attendance-forms/:formId/submit', submitPublicAttendanceForm);
 
 router.get('/quizzes/:quizId', getPublicQuiz);
 router.post('/quizzes/:quizId/submit', submitPublicQuiz);
+
+router.get('/projects/:projectId/form', getPublicForm);
+router.post('/projects/:projectId/form/submit', submitPublicForm);
 
 module.exports = router;
