@@ -43,7 +43,8 @@ exports.register = async (req, res, next) => {
     const { name, email, password, role } = req.body;
     // Check if this is the first user
     const userCount = await User.countDocuments();
-    let finalRole = role || 'mentor';
+    // Normal users default to mentor
+    let finalRole = 'mentor';
     let finalStatus = 'pending';
 
     if (userCount === 0) {
@@ -96,11 +97,11 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (user.status === 'pending') {
+    if (user.status === 'pending' && user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Your account is pending admin approval' });
     }
 
-    if (user.status === 'rejected') {
+    if (user.status === 'rejected' && user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Your account has been rejected by an admin' });
     }
 
