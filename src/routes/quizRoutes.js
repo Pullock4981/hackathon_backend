@@ -2,6 +2,7 @@ const express = require('express');
 const {
   createQuiz,
   getQuizzes,
+  updateQuiz,
   submitQuiz
 } = require('../controllers/quizController');
 const { protect } = require('../middleware/authMiddleware');
@@ -14,5 +15,8 @@ router.route('/')
 
 router.route('/:id/submit')
   .post(protect, submitQuiz);
+
+router.route('/:id')
+  .put(protect, updateQuiz);
 
 module.exports = router;

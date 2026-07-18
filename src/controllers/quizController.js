@@ -20,6 +20,30 @@ exports.createQuiz = async (req, res, next) => {
   }
 };
 
+// @desc    Update a quiz (e.g. status change)
+// @route   PUT /api/v1/projects/:projectId/quizzes/:id
+// @access  Private
+exports.updateQuiz = async (req, res, next) => {
+  try {
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: req.params.id, project: req.params.projectId },
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: 'Quiz not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: quiz
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Get all quizzes for a project
 // @route   GET /api/v1/projects/:projectId/quizzes
 // @access  Private
