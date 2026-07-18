@@ -95,14 +95,46 @@ exports.getDashboardStats = async (req, res, next) => {
     
     const placementRate = totalStudents > 0 ? ((totalHired / totalStudents) * 100).toFixed(2) : 0;
 
+    // Get real-time activities (recently added students)
+    const recentStudents = await Student.find({ project: { $in: projectIds } })
+      .sort({ createdAt: -1 })
+      .limit(4)
+      .populate('project', 'name batch');
+
+    const recentActivities = recentStudents.map(student => ({
+      text: `${student.name} profile was added/updated in the cohort`,
+      time: new Date(student.createdAt).toLocaleDateString(),
+      batch: student.project ? (student.project.batch || student.project.name) : 'Batch 1'
+    }));
+
+    // Get real-time priority tasks from at-risk students
+    const riskStudents = await Student.find({ project: { $in: projectIds }, riskStatus: 'High' })
+      .sort({ createdAt: -1 });
+
+    const totalRiskCount = riskStudents.length;
+    
+    const priorityTasks = riskStudents.slice(0, 4).map(student => 
+      `Contact ${student.name} immediately regarding high dropout risk`
+    );
+
+    let totalMentors = 0;
+    if (req.user.role === 'admin') {
+      const User = require('../models/User');
+      totalMentors = await User.countDocuments({ role: 'mentor' });
+    }
+
     res.status(200).json({
       success: true,
       data: {
         totalProjects: projects.length,
         totalStudents,
+        totalMentors,
         totalHired,
         totalActive,
-        placementRate: `${placementRate}%`
+        placementRate: `${placementRate}%`,
+        totalRiskCount,
+        recentActivities,
+        priorityTasks
       }
     });
   } catch (error) {
