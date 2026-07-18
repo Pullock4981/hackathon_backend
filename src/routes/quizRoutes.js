@@ -3,7 +3,8 @@ const {
   createQuiz,
   getQuizzes,
   updateQuiz,
-  submitQuiz
+  submitQuiz,
+  getQuizSubmissions
 } = require('../controllers/quizController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -15,6 +16,9 @@ router.route('/')
 
 router.route('/:id/submit')
   .post(protect, submitQuiz);
+
+router.route('/:id/submissions')
+  .get(protect, getQuizSubmissions);
 
 router.route('/:id')
   .put(protect, updateQuiz);

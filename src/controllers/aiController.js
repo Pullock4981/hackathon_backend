@@ -90,10 +90,12 @@ const Student = require('../models/Student');
 
 exports.sendRiskEmails = async (req, res, next) => {
   try {
-    const { studentId } = req.body || {};
+    const { studentId, studentIds } = req.body || {};
     let query = { riskStatus: 'High' };
     
-    if (studentId) {
+    if (studentIds && Array.isArray(studentIds) && studentIds.length > 0) {
+      query = { _id: { $in: studentIds } };
+    } else if (studentId) {
       query = { _id: studentId };
     }
 
@@ -112,20 +114,20 @@ exports.sendRiskEmails = async (req, res, next) => {
         const mentor = student.project.mentor;
         
         // Send email to student
-        const studentEmailBody = await generateStudentWarningEmail(student.name, mentor.name);
+        const studentEmailData = await generateStudentWarningEmail(student.name, mentor.name);
         const studentMailOptions = {
           to: student.email,
-          subject: 'Action Required: Boot-camp Performance Update',
-          text: studentEmailBody
+          subject: studentEmailData.subject || 'Action Required: Boot-camp Performance Update',
+          text: studentEmailData.body || studentEmailData
         };
         await sendEmail(studentMailOptions);
 
         // Send email to mentor
-        const mentorEmailBody = await generateMentorWarningEmail(student.name, mentor.name);
+        const mentorEmailData = await generateMentorWarningEmail(student.name, mentor.name);
         const mentorMailOptions = {
           to: mentor.email,
-          subject: `Action Required: Student ${student.name} Needs Mentorship`,
-          text: mentorEmailBody
+          subject: mentorEmailData.subject || `Action Required: Student ${student.name} Needs Mentorship`,
+          text: mentorEmailData.body || mentorEmailData
         };
         await sendEmail(mentorMailOptions);
 

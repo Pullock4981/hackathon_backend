@@ -5,7 +5,8 @@ const {
 } = require('../controllers/attendanceFormController');
 const {
   getPublicQuiz,
-  submitPublicQuiz
+  submitPublicQuiz,
+  verifyStudent
 } = require('../controllers/quizController');
 const {
   getPublicForm,
@@ -18,6 +19,7 @@ router.get('/attendance-forms/:formId', getPublicAttendanceForm);
 router.post('/attendance-forms/:formId/submit', submitPublicAttendanceForm);
 
 router.get('/quizzes/:quizId', getPublicQuiz);
+router.post('/quizzes/:quizId/verify', verifyStudent);
 router.post('/quizzes/:quizId/submit', submitPublicQuiz);
 
 router.get('/projects/:projectId/form', getPublicForm);

@@ -76,13 +76,25 @@ exports.createFormConfig = async (req, res, next) => {
     if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
     
     // Check ownership
-    if (project.mentor.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+    if (project.mentor.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Only the assigned mentor can configure this form' });
     }
 
     project.customFormConfig = {
       _id: project._id,
-      fields: []
+      fields: [
+        { id: 'email', label: 'Email', type: 'text', required: true },
+        { id: 'name', label: 'Name', type: 'text', required: true },
+        { id: 'courseEmail', label: 'Your Course Email Address', type: 'text', required: true },
+        { id: 'phoneNumber', label: 'Mobile Number', type: 'text', required: true },
+        { id: 'discordUsername', label: 'Discord Username', type: 'text', required: true },
+        { id: 'currentAddress', label: 'Your current address (area, police station, and district)', type: 'textarea', required: true },
+        { id: 'educationInstitute', label: 'Your Education Institute', type: 'text', required: true },
+        { id: 'groupSubject', label: 'Group/Subject', type: 'text', required: true },
+        { id: 'nextExamDate', label: 'আপনার পরবর্তী এক্সাম এর সম্ভাব্য তারিখ কবে?', type: 'date', required: false },
+        { id: 'currentOccupation', label: 'Currently, what are you doing', type: 'select', required: true, options: ['University Student', 'College Student', 'High School Student', 'Non Development Job (Looking for a switch)', 'Development Job', 'Unemployed (Looking for first job)', 'Other'] },
+        { id: 'level2Batch', label: 'Which batch are you in for the Level 2 course?', type: 'select', required: true, options: ['Level 2 Batch 1', 'Level 2 Batch 2', 'Level 2 Batch 3', 'Level 2 Batch 4', 'Level 2 Batch 5', 'Level 2 Batch 6', 'Level 2 Batch 7', 'Other'] }
+      ]
     };
     await project.save();
 
@@ -104,8 +116,8 @@ exports.updateFormConfig = async (req, res, next) => {
     if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
     
     // Check ownership
-    if (project.mentor.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+    if (project.mentor.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Only the assigned mentor can configure this form' });
     }
 
     const { fields } = req.body;
@@ -130,8 +142,26 @@ exports.updateFormConfig = async (req, res, next) => {
 exports.getPublicForm = async (req, res, next) => {
   try {
     const project = await Project.findById(req.params.projectId);
-    if (!project || !project.customFormConfig || !project.customFormConfig.fields || project.customFormConfig.fields.length === 0) {
-      return res.status(404).json({ success: false, message: 'Form not available or not configured' });
+    if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
+
+    if (!project.customFormConfig || !project.customFormConfig.fields || project.customFormConfig.fields.length === 0 || project.customFormConfig.fields.length === 5) {
+      project.customFormConfig = {
+        _id: project._id,
+        fields: [
+          { id: 'email', label: 'Email', type: 'text', required: true },
+          { id: 'name', label: 'Name', type: 'text', required: true },
+          { id: 'courseEmail', label: 'Your Course Email Address', type: 'text', required: true },
+          { id: 'phoneNumber', label: 'Mobile Number', type: 'text', required: true },
+          { id: 'discordUsername', label: 'Discord Username', type: 'text', required: true },
+          { id: 'currentAddress', label: 'Your current address (area, police station, and district)', type: 'textarea', required: true },
+          { id: 'educationInstitute', label: 'Your Education Institute', type: 'text', required: true },
+          { id: 'groupSubject', label: 'Group/Subject', type: 'text', required: true },
+          { id: 'nextExamDate', label: 'আপনার পরবর্তী এক্সাম এর সম্ভাব্য তারিখ কবে?', type: 'date', required: false },
+          { id: 'currentOccupation', label: 'Currently, what are you doing', type: 'select', required: true, options: ['University Student', 'College Student', 'High School Student', 'Non Development Job (Looking for a switch)', 'Development Job', 'Unemployed (Looking for first job)', 'Other'] },
+          { id: 'level2Batch', label: 'Which batch are you in for the Level 2 course?', type: 'select', required: true, options: ['Level 2 Batch 1', 'Level 2 Batch 2', 'Level 2 Batch 3', 'Level 2 Batch 4', 'Level 2 Batch 5', 'Level 2 Batch 6', 'Level 2 Batch 7', 'Other'] }
+        ]
+      };
+      await project.save();
     }
 
     res.status(200).json({
@@ -165,15 +195,12 @@ exports.submitPublicForm = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'No student found with this email in the project cohort.' });
     }
 
-    // Since the student model doesn't have a rigid dynamic schema, we will store extra form data in a flexible way,
-    // or map known fields to the model. We can store the raw formData in a new field if we want, or just update matching fields.
-    // Let's assume some fields might map directly (phoneNumber, etc.) 
-    if (formData.phoneNumber) student.phoneNumber = formData.phoneNumber;
-    if (formData.name) student.name = formData.name;
-    
-    // For anything else, we can store it in a generic object if the schema supports it.
-    // The Student schema doesn't have strict mode false, so we might lose data unless we define it.
-    // But for hackathon purpose, this will simulate success.
+    // Assign all form fields to the student dynamically
+    for (const key in formData) {
+      if (key !== 'email' && key !== 'mail' && key !== 'emailAddress' && key !== 'project') {
+        student[key] = formData[key];
+      }
+    }
     await student.save();
 
     res.status(200).json({

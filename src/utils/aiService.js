@@ -1,12 +1,10 @@
 const { OpenAI } = require('openai');
 
 const generateStudentWarningEmail = async (studentName, mentorName) => {
-  const fallbackEmail = `Hi ${studentName},
-
-We noticed you are currently in the Red Zone due to low attendance or performance. Please coordinate with your mentor, ${mentorName}, immediately to discuss a recovery plan to get back on track. We are here to support you, but it is important to take immediate action.
-
-Best regards,
-Programming Hero Job Placement Team`;
+  const fallbackEmail = {
+    subject: `Action Required: Boot-camp Performance Update`,
+    body: `Hi ${studentName},\n\nWe noticed you are currently in the Red Zone due to low attendance or performance. Please coordinate with your mentor, ${mentorName}, immediately to discuss a recovery plan to get back on track. We are here to support you, but it is important to take immediate action.\n\nBest regards,\nProgramming Hero Job Placement Team`
+  };
 
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
     return fallbackEmail;
@@ -17,13 +15,24 @@ Programming Hero Job Placement Team`;
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: "You are an empathetic but strict academic counselor writing an email." },
+        { role: "system", content: "You are an empathetic but strict academic counselor writing an email. You MUST return ONLY a valid JSON object with exactly two keys: 'subject' (a dynamic and engaging subject line) and 'body' (the email content)." },
         { role: "user", content: `Write a short, professional, and motivational warning email addressed to a student named ${studentName}. Mention their mentor is ${mentorName}. The student is currently in the 'Red Zone' (High Risk) for failing a boot-camp. Tell the student to coordinate with the mentor immediately to discuss a recovery plan. The email MUST end strictly with "Best regards,\nProgramming Hero Job Placement Team".` }
       ],
-      max_tokens: 250,
-      temperature: 0.7,
+      max_tokens: 300,
+      temperature: 0.8,
     });
-    return response.choices[0].message.content;
+    
+    try {
+      const parsed = JSON.parse(response.choices[0].message.content);
+      if (parsed.subject && parsed.body) return parsed;
+      return fallbackEmail;
+    } catch (e) {
+      // If parsing fails, use the raw text as body and fallback subject
+      return {
+        subject: fallbackEmail.subject,
+        body: response.choices[0].message.content
+      };
+    }
   } catch (error) {
     console.error("OpenAI Error:", error.message);
     return fallbackEmail;
@@ -31,12 +40,10 @@ Programming Hero Job Placement Team`;
 };
 
 const generateMentorWarningEmail = async (studentName, mentorName) => {
-  const fallbackEmail = `Hi ${mentorName},
-
-Your student, ${studentName}, is currently in the Red Zone due to low attendance or performance. Please reach out to them and provide the necessary mentorship and guidance to help them overcome these challenges and improve their standing in the boot-camp.
-
-Best regards,
-Programming Hero Job Placement Team`;
+  const fallbackEmail = {
+    subject: `Action Required: Student ${studentName} Needs Mentorship`,
+    body: `Hi ${mentorName},\n\nYour student, ${studentName}, is currently in the Red Zone due to low attendance or performance. Please reach out to them and provide the necessary mentorship and guidance to help them overcome these challenges and improve their standing in the boot-camp.\n\nBest regards,\nProgramming Hero Job Placement Team`
+  };
 
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
     return fallbackEmail;
@@ -47,13 +54,23 @@ Programming Hero Job Placement Team`;
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: "You are an academic program coordinator writing an email to a mentor." },
+        { role: "system", content: "You are an academic program coordinator writing an email to a mentor. You MUST return ONLY a valid JSON object with exactly two keys: 'subject' (a dynamic and engaging subject line) and 'body' (the email content)." },
         { role: "user", content: `Write a short, professional email addressed to a mentor named ${mentorName}. Their student, ${studentName}, is currently in the 'Red Zone' (High Risk) for failing a boot-camp. Instruct the mentor to provide the necessary mentorship and guidance to help the student get back on track. The email MUST end strictly with "Best regards,\nProgramming Hero Job Placement Team".` }
       ],
-      max_tokens: 250,
-      temperature: 0.7,
+      max_tokens: 300,
+      temperature: 0.8,
     });
-    return response.choices[0].message.content;
+
+    try {
+      const parsed = JSON.parse(response.choices[0].message.content);
+      if (parsed.subject && parsed.body) return parsed;
+      return fallbackEmail;
+    } catch (e) {
+      return {
+        subject: fallbackEmail.subject,
+        body: response.choices[0].message.content
+      };
+    }
   } catch (error) {
     console.error("OpenAI Error:", error.message);
     return fallbackEmail;

@@ -166,7 +166,35 @@ exports.getPublicQuiz = async (req, res, next) => {
   }
 };
 
-// @desc    Submit public quiz (find/create student and auto-grade)
+// @desc    Verify if a student is authorized (in the batch) to take the quiz
+// @route   POST /api/v1/public/quizzes/:quizId/verify
+// @access  Public
+exports.verifyStudent = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const quizId = req.params.quizId;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz || quiz.status !== 'Live') {
+      return res.status(400).json({ success: false, message: 'Quiz is not active.' });
+    }
+
+    const student = await Student.findOne({ email: email.toLowerCase(), project: quiz.project });
+    if (!student) {
+      return res.status(403).json({ success: false, message: 'Access Denied: You are not enrolled in the cohort for this quiz.' });
+    }
+
+    res.status(200).json({ success: true, message: 'Student verified.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Submit quiz answers
 // @route   POST /api/v1/public/quizzes/:quizId/submit
 // @access  Public
 exports.submitPublicQuiz = async (req, res, next) => {
@@ -183,24 +211,10 @@ exports.submitPublicQuiz = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Quiz is no longer active.' });
     }
 
-    // Find or create student
+    // Find student (must exist in project batch)
     let student = await Student.findOne({ email: email.toLowerCase(), project: quiz.project });
     if (!student) {
-      student = await Student.create({
-        name: name || email.split('@')[0],
-        email: email.toLowerCase(),
-        project: quiz.project,
-        activeStatus: 'Active',
-        hiredStatus: 'Hunting',
-        riskStatus: 'Low',
-        totalAttendance: 0,
-        totalAbsent: 0,
-        totalAttendanceMark: 0,
-        totalTaskMark: 0,
-        totalMark: 0,
-        attendanceStreak: 0,
-        absentStreak: 0
-      });
+      return res.status(403).json({ success: false, message: 'Access Denied: You are not enrolled in the cohort for this quiz.' });
     }
 
     let score = 0;
@@ -255,6 +269,25 @@ exports.submitPublicQuiz = async (req, res, next) => {
     if (error.code === 11000) {
       return res.status(400).json({ success: false, message: 'You have already submitted this quiz.' });
     }
+    next(error);
+  }
+};
+
+// @desc    Get all submissions for a quiz
+// @route   GET /api/v1/quizzes/:quizId/submissions
+// @access  Private
+exports.getQuizSubmissions = async (req, res, next) => {
+  try {
+    const submissions = await QuizSubmission.find({ quiz: req.params.id })
+      .populate('student', 'name email profilePicture')
+      .sort('-createdAt');
+
+    res.status(200).json({
+      success: true,
+      count: submissions.length,
+      data: submissions
+    });
+  } catch (error) {
     next(error);
   }
 };
