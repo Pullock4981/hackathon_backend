@@ -1,12 +1,9 @@
 const { OpenAI } = require('openai');
 
-const generateWarningEmail = async (studentName, mentorName) => {
-  // Fallback if OpenAI key is missing or invalid
-  const fallbackEmail = `Hi ${studentName} and Mentor ${mentorName},
+const generateStudentWarningEmail = async (studentName, mentorName) => {
+  const fallbackEmail = `Hi ${studentName},
 
-${studentName}, we noticed you are currently in the Red Zone due to low attendance or performance. Please coordinate with your mentor immediately to discuss a recovery plan to get back on track.
-
-${mentorName}, as ${studentName}'s mentor, please provide the necessary mentorship and guidance to help them overcome these challenges and improve their standing in the boot-camp.
+We noticed you are currently in the Red Zone due to low attendance or performance. Please coordinate with your mentor, ${mentorName}, immediately to discuss a recovery plan to get back on track. We are here to support you, but it is important to take immediate action.
 
 Best regards,
 Programming Hero Job Placement Team`;
@@ -16,26 +13,46 @@ Programming Hero Job Placement Team`;
   }
 
   try {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        {
-          role: "system",
-          content: "You are an empathetic but strict academic counselor writing an email."
-        },
-        {
-          role: "user",
-          content: `Write a short, professional, and motivational warning email addressed to both a student named ${studentName} and their mentor named ${mentorName}. The student is currently in the 'Red Zone' (High Risk) for failing a boot-camp. Tell the student to coordinate with the mentor immediately. Instruct the mentor to provide the necessary mentorship and guidance to help the student get back on track. The email MUST end strictly with "Best regards,\nProgramming Hero Job Placement Team".`
-        }
+        { role: "system", content: "You are an empathetic but strict academic counselor writing an email." },
+        { role: "user", content: `Write a short, professional, and motivational warning email addressed to a student named ${studentName}. Mention their mentor is ${mentorName}. The student is currently in the 'Red Zone' (High Risk) for failing a boot-camp. Tell the student to coordinate with the mentor immediately to discuss a recovery plan. The email MUST end strictly with "Best regards,\nProgramming Hero Job Placement Team".` }
       ],
       max_tokens: 250,
       temperature: 0.7,
     });
+    return response.choices[0].message.content;
+  } catch (error) {
+    console.error("OpenAI Error:", error.message);
+    return fallbackEmail;
+  }
+};
 
+const generateMentorWarningEmail = async (studentName, mentorName) => {
+  const fallbackEmail = `Hi ${mentorName},
+
+Your student, ${studentName}, is currently in the Red Zone due to low attendance or performance. Please reach out to them and provide the necessary mentorship and guidance to help them overcome these challenges and improve their standing in the boot-camp.
+
+Best regards,
+Programming Hero Job Placement Team`;
+
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+    return fallbackEmail;
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "You are an academic program coordinator writing an email to a mentor." },
+        { role: "user", content: `Write a short, professional email addressed to a mentor named ${mentorName}. Their student, ${studentName}, is currently in the 'Red Zone' (High Risk) for failing a boot-camp. Instruct the mentor to provide the necessary mentorship and guidance to help the student get back on track. The email MUST end strictly with "Best regards,\nProgramming Hero Job Placement Team".` }
+      ],
+      max_tokens: 250,
+      temperature: 0.7,
+    });
     return response.choices[0].message.content;
   } catch (error) {
     console.error("OpenAI Error:", error.message);
@@ -88,6 +105,7 @@ const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, diff
 };
 
 module.exports = {
-  generateWarningEmail,
+  generateStudentWarningEmail,
+  generateMentorWarningEmail,
   generateQuizQuestions,
 };

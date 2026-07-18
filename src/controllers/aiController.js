@@ -84,7 +84,7 @@ exports.predictRisk = async (req, res, next) => {
 // @desc    Manually trigger AI risk emails
 // @route   POST /api/v1/ai/send-risk-emails
 // @access  Private
-const { generateWarningEmail, generateQuizQuestions } = require('../utils/aiService');
+const { generateStudentWarningEmail, generateMentorWarningEmail, generateQuizQuestions } = require('../utils/aiService');
 const sendEmail = require('../utils/sendEmail');
 const Student = require('../models/Student');
 
@@ -110,16 +110,26 @@ exports.sendRiskEmails = async (req, res, next) => {
     for (let student of atRiskStudents) {
       if (student.email && student.project && student.project.mentor) {
         const mentor = student.project.mentor;
-        const emailBody = await generateWarningEmail(student.name, mentor.name);
         
-        const mailOptions = {
-          to: student.email + ', ' + mentor.email,
+        // Send email to student
+        const studentEmailBody = await generateStudentWarningEmail(student.name, mentor.name);
+        const studentMailOptions = {
+          to: student.email,
           subject: 'Action Required: Boot-camp Performance Update',
-          text: emailBody
+          text: studentEmailBody
         };
+        await sendEmail(studentMailOptions);
 
-        await sendEmail(mailOptions);
-        emailsSent++;
+        // Send email to mentor
+        const mentorEmailBody = await generateMentorWarningEmail(student.name, mentor.name);
+        const mentorMailOptions = {
+          to: mentor.email,
+          subject: `Action Required: Student ${student.name} Needs Mentorship`,
+          text: mentorEmailBody
+        };
+        await sendEmail(mentorMailOptions);
+
+        emailsSent += 2;
       }
     }
 

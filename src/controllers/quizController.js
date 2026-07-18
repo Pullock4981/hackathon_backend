@@ -8,6 +8,7 @@ const Student = require('../models/Student');
 exports.createQuiz = async (req, res, next) => {
   try {
     req.body.project = req.params.projectId;
+    req.body.creator = req.user.id;
     const quiz = await Quiz.create(req.body);
 
     res.status(201).json({
@@ -24,7 +25,11 @@ exports.createQuiz = async (req, res, next) => {
 // @access  Private
 exports.getQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find({ project: req.params.projectId });
+    let query = { project: req.params.projectId };
+    if (req.user.role !== 'admin') {
+      query.creator = req.user.id;
+    }
+    const quizzes = await Quiz.find(query);
 
     res.status(200).json({
       success: true,

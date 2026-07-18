@@ -14,6 +14,10 @@ const quizSchema = new mongoose.Schema(
       ref: 'Project',
       required: true,
     },
+    creator: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+    },
     title: {
       type: String,
       required: true,

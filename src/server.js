@@ -10,10 +10,17 @@ connectDB().then(() => {
   // Initialize Cron Jobs
   initCronJobs();
 
-  app.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  }
 }).catch((error) => {
   console.error('Failed to connect to the database:', error);
-  process.exit(1);
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
 });
+
+// Export the Express API for Vercel
+module.exports = app;
