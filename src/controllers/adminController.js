@@ -18,7 +18,7 @@ exports.getUsers = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateUser = async (req, res, next) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, status } = req.body;
     let user = await User.findById(req.params.id);
 
     if (!user) {
@@ -28,6 +28,7 @@ exports.updateUser = async (req, res, next) => {
     user.name = name || user.name;
     user.email = email || user.email;
     user.role = role || user.role;
+    if (status) user.status = status;
 
     await user.save();
 

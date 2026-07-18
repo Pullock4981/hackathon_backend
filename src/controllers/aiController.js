@@ -5,17 +5,49 @@ exports.scoreResume = async (req, res, next) => {
   try {
     const { resumeUrl } = req.body;
     
-    // Here we would call an external AI API (e.g. OpenAI) to analyze the resume
-    // For now, return a mock response
+    if (!resumeUrl) {
+      return res.status(400).json({ success: false, message: 'Resume URL is required' });
+    }
     
-    const mockScore = Math.floor(Math.random() * 40) + 60; // 60-100
+    // Generate a deterministic score based on the resume URL length and characters
+    let seed = 0;
+    for (let i = 0; i < resumeUrl.length; i++) {
+      seed += resumeUrl.charCodeAt(i);
+    }
+    
+    // Use the seed to generate a consistent score between 65 and 96
+    const mockScore = 65 + (seed % 32); 
+    
+    // Choose consistent feedback based on the score
+    let issues = [];
+    let feedback = '';
+
+    if (mockScore >= 85) {
+      feedback = 'The resume is exceptionally well-structured with clear impact metrics. Highly compatible with top-tier roles.';
+      issues = [
+        { problem: 'Slightly generic professional summary.', recovery: 'Tailor the summary specifically to the target job description to stand out even more.' }
+      ];
+    } else if (mockScore >= 75) {
+      feedback = 'The resume shows strong potential but lacks concrete data and impact metrics in some areas. Structural flow is decent.';
+      issues = [
+        { problem: 'Missing quantitative metrics in the "Projects" section.', recovery: 'Add numbers to show impact (e.g., "Improved load time by 30%").' },
+        { problem: 'Leadership experience is not highlighted prominently.', recovery: 'Create a separate "Leadership" section or emphasize team management roles.' }
+      ];
+    } else {
+      feedback = 'The resume needs significant improvement in formatting and content delivery to pass modern ATS systems effectively.';
+      issues = [
+        { problem: 'Weak action verbs used in descriptions.', recovery: 'Replace words like "Helped" or "Worked on" with strong action verbs like "Architected", "Spearheaded", or "Optimized".' },
+        { problem: 'Formatting is inconsistent or overly complex.', recovery: 'Use a clean, single-column layout with consistent fonts and spacing for ATS parsing.' },
+        { problem: 'Lack of clear technical stack summary.', recovery: 'Add a dedicated "Skills" section grouping technologies by category (Frontend, Backend, Tools).' }
+      ];
+    }
     
     res.status(200).json({
       success: true,
       data: {
         score: mockScore,
-        feedback: 'The resume looks good but could use more details on recent projects.',
-        improvements: ['Add quantitative metrics', 'Highlight leadership roles']
+        feedback,
+        issues
       }
     });
   } catch (error) {

@@ -29,7 +29,8 @@ const sendTokenResponse = (user, statusCode, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        status: user.status
       }
     });
 };
@@ -40,16 +41,34 @@ const sendTokenResponse = (user, statusCode, res) => {
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
+    // Check if this is the first user
+    const userCount = await User.countDocuments();
+    let finalRole = role || 'mentor';
+    let finalStatus = 'pending';
+
+    if (userCount === 0) {
+      finalRole = 'admin';
+      finalStatus = 'approved';
+    }
 
     // Create user
     const user = await User.create({
       name,
       email,
       password,
-      role,
+      role: finalRole,
+      status: finalStatus,
     });
 
-    sendTokenResponse(user, 201, res);
+    if (finalStatus === 'pending') {
+      res.status(201).json({
+        success: true,
+        pending: true,
+        message: 'Registration successful. Your account is pending admin approval. You can log in once approved.',
+      });
+    } else {
+      sendTokenResponse(user, 201, res);
+    }
   } catch (error) {
     if (error.code === 11000) {
        return res.status(400).json({ success: false, message: 'Email already exists' });
@@ -75,6 +94,14 @@ exports.login = async (req, res, next) => {
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (user.status === 'pending') {
+      return res.status(403).json({ success: false, message: 'Your account is pending admin approval' });
+    }
+
+    if (user.status === 'rejected') {
+      return res.status(403).json({ success: false, message: 'Your account has been rejected by an admin' });
     }
 
     // Check if password matches

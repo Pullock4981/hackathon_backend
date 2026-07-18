@@ -103,3 +103,129 @@ exports.submitQuiz = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get public quiz details without answers
+// @route   GET /api/v1/public/quizzes/:quizId
+// @access  Public
+exports.getPublicQuiz = async (req, res, next) => {
+  try {
+    const quiz = await Quiz.findById(req.params.quizId);
+    if (!quiz || quiz.status !== 'Live') {
+      return res.status(404).json({ success: false, message: 'Quiz not found or not active.' });
+    }
+
+    // Strip answers from questions
+    const safeQuestions = quiz.questions.map(q => ({
+      _id: q._id,
+      questionText: q.questionText,
+      options: q.options,
+      marks: q.marks
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: quiz._id,
+        title: quiz.title,
+        durationMinutes: quiz.durationMinutes,
+        questions: safeQuestions,
+        project: quiz.project
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Submit public quiz (find/create student and auto-grade)
+// @route   POST /api/v1/public/quizzes/:quizId/submit
+// @access  Public
+exports.submitPublicQuiz = async (req, res, next) => {
+  try {
+    const { name, email, answers, status } = req.body;
+    const quizId = req.params.quizId;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Course Email is required.' });
+    }
+
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz || quiz.status !== 'Live') {
+      return res.status(400).json({ success: false, message: 'Quiz is no longer active.' });
+    }
+
+    // Find or create student
+    let student = await Student.findOne({ email: email.toLowerCase(), project: quiz.project });
+    if (!student) {
+      student = await Student.create({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        project: quiz.project,
+        activeStatus: 'Active',
+        hiredStatus: 'Hunting',
+        riskStatus: 'Low',
+        totalAttendance: 0,
+        totalAbsent: 0,
+        totalAttendanceMark: 0,
+        totalTaskMark: 0,
+        totalMark: 0,
+        attendanceStreak: 0,
+        absentStreak: 0
+      });
+    }
+
+    let score = 0;
+    let totalPossibleScore = 0;
+    const processedAnswers = [];
+
+    // Auto-grading logic
+    quiz.questions.forEach((question) => {
+      totalPossibleScore += question.marks;
+      
+      // Ensure answers handles both Object shape from body { qId: option }
+      let providedAnswer = null;
+      if (Array.isArray(answers)) {
+        const studentAnswerObj = answers.find(a => a.questionId === question._id.toString());
+        providedAnswer = studentAnswerObj ? studentAnswerObj.providedAnswer : null;
+      } else if (typeof answers === 'object') {
+        providedAnswer = answers[question._id.toString()] || null;
+      }
+      
+      const isCorrect = providedAnswer === question.correctAnswer;
+      if (isCorrect) {
+        score += question.marks;
+      }
+
+      processedAnswers.push({
+        questionId: question._id,
+        providedAnswer,
+        isCorrect
+      });
+    });
+
+    const submission = await QuizSubmission.create({
+      quiz: quizId,
+      student: student._id,
+      project: quiz.project,
+      score,
+      totalPossibleScore,
+      status: status || 'Submitted',
+      answers: processedAnswers
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        score,
+        totalPossibleScore,
+        status: submission.status
+      }
+    });
+
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'You have already submitted this quiz.' });
+    }
+    next(error);
+  }
+};

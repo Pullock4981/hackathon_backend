@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'mentor'],
       default: 'mentor',
     },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
   },
   {
     timestamps: true,
