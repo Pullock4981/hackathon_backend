@@ -211,3 +211,29 @@ exports.submitPublicForm = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Import sheet proxy (fetches CSV URL)
+// @route   POST /api/v1/projects/import-sheet
+// @access  Private
+exports.importSheet = async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'Google Sheet CSV URL is required' });
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sheet: ${response.statusText}`);
+    }
+
+    const csvData = await response.text();
+
+    res.status(200).json({
+      success: true,
+      csvData
+    });
+  } catch (error) {
+    next(error);
+  }
+};

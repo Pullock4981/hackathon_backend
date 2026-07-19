@@ -4,7 +4,8 @@ const {
   getProjects,
   getProject,
   createFormConfig,
-  updateFormConfig
+  updateFormConfig,
+  importSheet
 } = require('../controllers/projectController');
 const { calculateTiers, getLeaderboard } = require('../controllers/statsController');
 const { protect } = require('../middleware/authMiddleware');
@@ -28,6 +29,8 @@ router.use('/:projectId/quizzes', quizRouter);
 router.route('/')
   .get(protect, getProjects)
   .post(protect, createProject);
+
+router.post('/import-sheet', protect, importSheet);
 
 router.route('/:id')
   .get(protect, getProject);

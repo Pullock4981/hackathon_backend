@@ -19,6 +19,17 @@ const projectSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['Active', 'Completed'],
+      default: 'Active',
+    },
+    startedDate: {
+      type: String,
+    },
+    bannerImage: {
+      type: String,
+    },
     // Calculated fields to cache performance (updated occasionally via CRON or triggers)
     totalStudents: { type: Number, default: 0 },
     avgAttendanceRate: { type: Number, default: 0 },

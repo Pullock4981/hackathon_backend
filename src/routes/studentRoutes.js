@@ -3,7 +3,8 @@ const {
   addStudent,
   getStudents,
   bulkAddStudents,
-  updateStudentProfile
+  updateStudentProfile,
+  importDetails
 } = require('../controllers/studentController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -15,6 +16,8 @@ router.route('/')
 
 router.route('/bulk')
   .post(protect, bulkAddStudents);
+
+router.post('/import-details', protect, importDetails);
 
 // This handles /api/v1/students/:id since it's mounted differently?
 // Actually if mounted from projectRoutes it will be /api/v1/projects/:projectId/students/:id
