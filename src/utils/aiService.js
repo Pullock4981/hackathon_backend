@@ -124,24 +124,8 @@ const getTopicQuestions = (topic) => {
 };
 
 const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, difficulty) => {
-  const genericQuestions = getTopicQuestions(topic);
-
-  // Randomize and pick the requested number of questions
-  const shuffled = genericQuestions.sort(() => 0.5 - Math.random());
-  
-  const fallbackQuestions = Array.from({ length: numQuestions }).map((_, idx) => {
-    // Loop through available questions if numQuestions > available questions
-    const template = shuffled[idx % shuffled.length];
-    return {
-      questionText: template.questionText,
-      options: template.options,
-      correctAnswer: template.correctAnswer,
-      marks: marksPerQuestion
-    };
-  });
-
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-    return fallbackQuestions;
+    throw new Error('OpenAI API Key is missing. Please set OPENAI_API_KEY in backend/.env');
   }
 
   try {
@@ -169,14 +153,12 @@ const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, diff
     });
 
     let content = response.choices[0].message.content.trim();
-    // Strip markdown code block formatting if present
     if (content.startsWith('```json')) {
       content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
     } else if (content.startsWith('```')) {
       content = content.replace(/^```\n/, '').replace(/\n```$/, '');
     }
     
-    // Find first '[' and last ']' just in case there's conversational text
     const startIndex = content.indexOf('[');
     const endIndex = content.lastIndexOf(']');
     if (startIndex !== -1 && endIndex !== -1) {
@@ -184,11 +166,57 @@ const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, diff
     }
     
     const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? parsed : fallbackQuestions;
+    if (!Array.isArray(parsed)) throw new Error("Invalid response format from OpenAI");
+    return parsed;
   } catch (error) {
     console.error("OpenAI Error:", error.message);
-    // Explicitly return our dynamic fallback database when OpenAI quota is exhausted
-    return fallbackQuestions;
+    throw new Error(`OpenAI API Error: ${error.message}`);
+  }
+};
+
+const analyzeResumeWithAI = async (resumeUrl) => {
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+    throw new Error('OpenAI API Key is missing. Please set OPENAI_API_KEY in backend/.env');
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert ATS Resume Analyzer. Return ONLY a valid JSON object."
+        },
+        {
+          role: "user",
+          content: `I have a resume hosted at this URL: ${resumeUrl}. Since you cannot browse the internet, generate a realistic, simulated ATS analysis for a Junior Software Developer resume that might be found at this link. 
+          Return a JSON object with:
+          - "score" (number between 60 and 95)
+          - "feedback" (string, overall feedback)
+          - "issues" (array of 3 objects, each with "problem" (string) and "recovery" (string) explaining how to fix it)`
+        }
+      ],
+      temperature: 0.8,
+    });
+
+    let content = response.choices[0].message.content.trim();
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
+    } else if (content.startsWith('```')) {
+      content = content.replace(/^```\n/, '').replace(/\n```$/, '');
+    }
+    
+    const startIndex = content.indexOf('{');
+    const endIndex = content.lastIndexOf('}');
+    if (startIndex !== -1 && endIndex !== -1) {
+      content = content.substring(startIndex, endIndex + 1);
+    }
+    
+    return JSON.parse(content);
+  } catch (error) {
+    console.error("OpenAI Error:", error.message);
+    throw new Error(`OpenAI API Error: ${error.message}`);
   }
 };
 
@@ -196,4 +224,5 @@ module.exports = {
   generateStudentWarningEmail,
   generateMentorWarningEmail,
   generateQuizQuestions,
+  analyzeResumeWithAI,
 };
