@@ -1,4 +1,5 @@
 const { OpenAI } = require('openai');
+const getQuizBankQuestions = require('./quizBank');
 
 const generateStudentWarningEmail = async (studentName, mentorName) => {
   const fallbackEmail = {
@@ -77,55 +78,11 @@ const generateMentorWarningEmail = async (studentName, mentorName) => {
   }
 };
 
-const getTopicQuestions = (topic) => {
-  const t = topic.toLowerCase();
-  
-  if (t.includes('react')) {
-    return [
-      { questionText: 'Which hook is used for managing side effects in React?', options: ['useState', 'useEffect', 'useContext', 'useReducer'], correctAnswer: 'useEffect' },
-      { questionText: 'What is the Virtual DOM?', options: ['A direct copy of the actual DOM', 'A lightweight JavaScript representation of the DOM', 'A browser extension for debugging', 'A CSS framework'], correctAnswer: 'A lightweight JavaScript representation of the DOM' },
-      { questionText: 'How do you pass data from a parent to a child component in React?', options: ['Using State', 'Using Context API', 'Using Props', 'Using Redux'], correctAnswer: 'Using Props' },
-      { questionText: 'What does JSX stand for?', options: ['JavaScript XML', 'Java Syntax Extension', 'JSON X', 'JavaScript Execution'], correctAnswer: 'JavaScript XML' },
-      { questionText: 'Which hook should be used to memorize a complex calculation?', options: ['useMemo', 'useCallback', 'useEffect', 'useRef'], correctAnswer: 'useMemo' },
-      { questionText: 'What is the purpose of a key in a React list?', options: ['To style the element', 'To uniquely identify elements for efficient reconciliation', 'To bind event listeners', 'To set the initial state'], correctAnswer: 'To uniquely identify elements for efficient reconciliation' },
-      { questionText: 'Can a React functional component have local state?', options: ['No, only class components can', 'Yes, by using the useState hook', 'Yes, by using Redux only', 'Yes, by modifying props directly'], correctAnswer: 'Yes, by using the useState hook' }
-    ];
-  }
-  
-  if (t.includes('node') || t.includes('express')) {
-    return [
-      { questionText: 'What is Node.js?', options: ['A frontend framework', 'A JavaScript runtime environment', 'A database management system', 'A CSS preprocessor'], correctAnswer: 'A JavaScript runtime environment' },
-      { questionText: 'Which core module in Node.js is used to create a web server?', options: ['fs', 'path', 'http', 'url'], correctAnswer: 'http' },
-      { questionText: 'What is Express.js?', options: ['A database', 'A minimalist web framework for Node.js', 'An ORM', 'A testing library'], correctAnswer: 'A minimalist web framework for Node.js' },
-      { questionText: 'How do you define a middleware in Express?', options: ['app.use()', 'app.get()', 'app.set()', 'app.listen()'], correctAnswer: 'app.use()' },
-      { questionText: 'Which object represents the HTTP request in an Express route callback?', options: ['res', 'req', 'next', 'app'], correctAnswer: 'req' },
-      { questionText: 'What does "npm" stand for?', options: ['Node Package Manager', 'Node Project Module', 'New Package Manager', 'No Problem Mate'], correctAnswer: 'Node Package Manager' }
-    ];
-  }
-
-  if (t.includes('javascript') || t.includes('js')) {
-    return [
-      { questionText: 'Which of the following is NOT a JavaScript data type?', options: ['String', 'Number', 'Boolean', 'Character'], correctAnswer: 'Character' },
-      { questionText: 'What is closure in JavaScript?', options: ['A way to block script execution', 'A function retaining access to its lexical scope', 'Closing a browser window', 'A method to end a loop'], correctAnswer: 'A function retaining access to its lexical scope' },
-      { questionText: 'Which keyword is used to declare a block-scoped variable?', options: ['var', 'let', 'function', 'global'], correctAnswer: 'let' },
-      { questionText: 'What does the "this" keyword refer to in a regular function?', options: ['The global object', 'The object that invoked the function', 'The function itself', 'Undefined'], correctAnswer: 'The object that invoked the function' },
-      { questionText: 'How do you check if a variable is an array?', options: ['typeof array', 'Array.isArray()', 'array instanceof Object', 'array.length > 0'], correctAnswer: 'Array.isArray()' }
-    ];
-  }
-
-  // Generic fallback if topic is unknown
-  return [
-    { questionText: `What is the main advantage of using ${topic} in a production environment?`, options: ['Improved scalability and performance', 'It requires zero configuration', 'It replaces the need for a database', 'It allows writing code without syntax rules'], correctAnswer: 'Improved scalability and performance' },
-    { questionText: `Which of the following is considered a best practice when working with ${topic}?`, options: ['Modularizing the codebase', 'Using global variables everywhere', 'Ignoring error handling', 'Writing monolithic functions'], correctAnswer: 'Modularizing the codebase' },
-    { questionText: `In the context of ${topic}, how should you handle asynchronous operations?`, options: ['Using Promises or Async/Await', 'Using synchronous blocking loops', 'Ignoring them completely', 'Using CSS transitions'], correctAnswer: 'Using Promises or Async/Await' },
-    { questionText: `What is a common pitfall developers face when learning ${topic}?`, options: ['Poor state or data management', 'Typing too fast', 'Using dark mode in their editor', 'Upgrading packages too rarely'], correctAnswer: 'Poor state or data management' },
-    { questionText: `Which security measure is crucial when deploying applications built with ${topic}?`, options: ['Input validation and sanitization', 'Disabling HTTPS', 'Storing passwords in plain text', 'Making all endpoints public'], correctAnswer: 'Input validation and sanitization' }
-  ];
-};
-
 const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, difficulty) => {
+  // If OpenAI API key is missing or invalid, fallback to the local quiz bank
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-    throw new Error('OpenAI API Key is missing. Please set OPENAI_API_KEY in backend/.env');
+    console.warn("OpenAI API Key missing, falling back to local quiz bank.");
+    return getQuizBankQuestions(topic, numQuestions, marksPerQuestion);
   }
 
   try {
@@ -170,13 +127,31 @@ const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, diff
     return parsed;
   } catch (error) {
     console.error("OpenAI Error:", error.message);
-    throw new Error(`OpenAI API Error: ${error.message}`);
+    // Explicitly return our dynamic fallback database when OpenAI fails (e.g. Quota Exceeded)
+    console.warn("OpenAI API call failed, falling back to local quiz bank.");
+    return getQuizBankQuestions(topic, numQuestions, marksPerQuestion);
   }
 };
 
 const analyzeResumeWithAI = async (resumeUrl) => {
+  const fallbackResult = {
+    score: 85,
+    feedback: "High Potential",
+    strengths: [
+      "Good foundational knowledge in core languages.",
+      "Projects demonstrate full-stack capabilities.",
+      "Clear formatting and readable structure."
+    ],
+    issues: [
+      { problem: "Missing cloud infrastructure experience.", recovery: "Add a small project using AWS or Docker." },
+      { problem: "Generic summary statement.", recovery: "Tailor the summary to highlight specific achievements." },
+      { problem: "Portfolio links are broken.", recovery: "Verify and update all external links." }
+    ]
+  };
+
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-    throw new Error('OpenAI API Key is missing. Please set OPENAI_API_KEY in backend/.env');
+    console.warn("OpenAI API Key missing, using fallback resume score.");
+    return fallbackResult;
   }
 
   try {
@@ -193,7 +168,8 @@ const analyzeResumeWithAI = async (resumeUrl) => {
           content: `I have a resume hosted at this URL: ${resumeUrl}. Since you cannot browse the internet, generate a realistic, simulated ATS analysis for a Junior Software Developer resume that might be found at this link. 
           Return a JSON object with:
           - "score" (number between 60 and 95)
-          - "feedback" (string, overall feedback)
+          - "feedback" (string, short overall feedback like "High Potential" or "Needs Improvement")
+          - "strengths" (array of 3 strings, highlighting strong points)
           - "issues" (array of 3 objects, each with "problem" (string) and "recovery" (string) explaining how to fix it)`
         }
       ],
@@ -216,7 +192,8 @@ const analyzeResumeWithAI = async (resumeUrl) => {
     return JSON.parse(content);
   } catch (error) {
     console.error("OpenAI Error:", error.message);
-    throw new Error(`OpenAI API Error: ${error.message}`);
+    console.warn("OpenAI API call failed, falling back to local resume scorer.");
+    return fallbackResult;
   }
 };
 

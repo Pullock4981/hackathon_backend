@@ -22,6 +22,7 @@ exports.scoreResume = async (req, res, next) => {
       data: {
         score: aiResult.score,
         feedback: aiResult.feedback,
+        strengths: aiResult.strengths,
         issues: aiResult.issues
       }
     });
