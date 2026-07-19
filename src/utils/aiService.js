@@ -168,7 +168,22 @@ const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, diff
       temperature: 0.7,
     });
 
-    const parsed = JSON.parse(response.choices[0].message.content);
+    let content = response.choices[0].message.content.trim();
+    // Strip markdown code block formatting if present
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
+    } else if (content.startsWith('```')) {
+      content = content.replace(/^```\n/, '').replace(/\n```$/, '');
+    }
+    
+    // Find first '[' and last ']' just in case there's conversational text
+    const startIndex = content.indexOf('[');
+    const endIndex = content.lastIndexOf(']');
+    if (startIndex !== -1 && endIndex !== -1) {
+      content = content.substring(startIndex, endIndex + 1);
+    }
+    
+    const parsed = JSON.parse(content);
     return Array.isArray(parsed) ? parsed : fallbackQuestions;
   } catch (error) {
     console.error("OpenAI Error:", error.message);
