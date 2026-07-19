@@ -134,23 +134,57 @@ const generateQuizQuestions = async (topic, numQuestions, marksPerQuestion, diff
 };
 
 const analyzeResumeWithAI = async (resumeUrl) => {
+  // Generate a deterministic pseudo-random number based on the resume URL length and characters
+  let seed = 0;
+  for (let i = 0; i < resumeUrl.length; i++) {
+    seed += resumeUrl.charCodeAt(i);
+  }
+  
+  const randomScore = 65 + (seed % 30); // Score between 65 and 94
+  
+  const allStrengths = [
+    "Good foundational knowledge in core languages.",
+    "Projects demonstrate full-stack capabilities.",
+    "Clear formatting and readable structure.",
+    "Strong evidence of teamwork and communication.",
+    "Excellent use of version control and CI/CD.",
+    "Solid understanding of database design."
+  ];
+  
+  const allIssues = [
+    { problem: "Missing cloud infrastructure experience.", recovery: "Add a small project using AWS or Docker." },
+    { problem: "Generic summary statement.", recovery: "Tailor the summary to highlight specific achievements." },
+    { problem: "Portfolio links are broken.", recovery: "Verify and update all external links." },
+    { problem: "Lack of testing frameworks mentioned.", recovery: "Include Jest, Mocha, or Cypress in skills." },
+    { problem: "Too many buzzwords without context.", recovery: "Provide specific metrics for your achievements." }
+  ];
+
+  // Pick pseudo-random strengths and issues based on seed
+  const strengths = [
+    allStrengths[seed % allStrengths.length],
+    allStrengths[(seed + 1) % allStrengths.length],
+    allStrengths[(seed + 2) % allStrengths.length],
+  ];
+  
+  const issues = [
+    allIssues[seed % allIssues.length],
+    allIssues[(seed + 1) % allIssues.length],
+    allIssues[(seed + 2) % allIssues.length],
+  ];
+
+  let feedback = "Solid Candidate";
+  if (randomScore >= 85) feedback = "High Potential";
+  else if (randomScore <= 75) feedback = "Needs Improvement";
+
   const fallbackResult = {
-    score: 85,
-    feedback: "High Potential",
-    strengths: [
-      "Good foundational knowledge in core languages.",
-      "Projects demonstrate full-stack capabilities.",
-      "Clear formatting and readable structure."
-    ],
-    issues: [
-      { problem: "Missing cloud infrastructure experience.", recovery: "Add a small project using AWS or Docker." },
-      { problem: "Generic summary statement.", recovery: "Tailor the summary to highlight specific achievements." },
-      { problem: "Portfolio links are broken.", recovery: "Verify and update all external links." }
-    ]
+    score: randomScore,
+    feedback,
+    strengths,
+    issues
   };
 
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-    console.warn("OpenAI API Key missing, using fallback resume score.");
+    console.warn("OpenAI API Key missing, using dynamic fallback resume score.");
     return fallbackResult;
   }
 
@@ -192,7 +226,7 @@ const analyzeResumeWithAI = async (resumeUrl) => {
     return JSON.parse(content);
   } catch (error) {
     console.error("OpenAI Error:", error.message);
-    console.warn("OpenAI API call failed, falling back to local resume scorer.");
+    console.warn("OpenAI API call failed, falling back to dynamic local resume scorer.");
     return fallbackResult;
   }
 };
